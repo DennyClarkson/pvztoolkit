@@ -358,3 +358,37 @@ class PvZAdapter:
         proc, off = self._ensure()
         patch = off.unlock_sun_limit
         proc.write_bytes(patch.hack if enabled else patch.reset, [patch.addr])
+
+    def set_placed_anywhere(self, enabled: bool) -> None:
+        proc, off = self._ensure()
+        p1 = off.placed_anywhere
+        p2 = off.placed_anywhere_preview
+        proc.write_bytes(p1.hack if enabled else p1.reset, [p1.addr])
+        proc.write_bytes(p2.hack if enabled else p2.reset, [p2.addr])
+
+    def set_mushrooms_awake(self, enabled: bool) -> None:
+        proc, off = self._ensure()
+        p = off.mushrooms_awake
+        proc.write_bytes(p.hack if enabled else p.reset, [p.addr])
+
+    def set_stop_spawning(self, enabled: bool) -> None:
+        proc, off = self._ensure()
+        p = off.stop_spawning
+        proc.write_bytes(p.hack if enabled else p.reset, [p.addr])
+
+    def set_auto_collected(self, enabled: bool) -> None:
+        proc, off = self._ensure()
+        p = off.auto_collected
+        proc.write_bytes(p.hack if enabled else p.reset, [p.addr])
+
+    def set_reload_instantly(self, enabled: bool) -> None:
+        proc, off = self._ensure()
+        p = off.reload_instantly
+        proc.write_bytes(p.hack if enabled else p.reset, [p.addr])
+
+    def set_no_cooldown(self, enabled: bool) -> None:
+        proc, off = self._ensure()
+        p1 = off.no_cooldown_1
+        p2 = off.no_cooldown_2
+        proc.write_bytes(p1.hack if enabled else p1.reset, [p1.addr])
+        proc.write_bytes(p2.hack if enabled else p2.reset, [p2.addr])

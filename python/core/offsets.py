@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
-class SunPatch:
+class BytePatch:
     addr: int
     hack: bytes
     reset: bytes
@@ -27,7 +27,15 @@ class VersionOffsets:
     sun: int
     user_data: int
     money: int
-    unlock_sun_limit: SunPatch
+    unlock_sun_limit: BytePatch
+    placed_anywhere: BytePatch
+    placed_anywhere_preview: BytePatch
+    mushrooms_awake: BytePatch
+    stop_spawning: BytePatch
+    auto_collected: BytePatch
+    reload_instantly: BytePatch
+    no_cooldown_1: BytePatch
+    no_cooldown_2: BytePatch
 
 
 OFFSETS_1051_EN = VersionOffsets(
@@ -46,7 +54,15 @@ OFFSETS_1051_EN = VersionOffsets(
     sun=0x5560,
     user_data=0x82C,
     money=0x28,
-    unlock_sun_limit=SunPatch(addr=0x00430A23, hack=b"\xEB", reset=b"\x7E"),
+    unlock_sun_limit=BytePatch(addr=0x00430A23, hack=b"\xEB", reset=b"\x7E"),
+    placed_anywhere=BytePatch(addr=0x0040FE30, hack=b"\x81", reset=b"\x84"),
+    placed_anywhere_preview=BytePatch(addr=0x00438E40, hack=b"\xEB", reset=b"\x74"),
+    mushrooms_awake=BytePatch(addr=0x0045DE8E, hack=b"\xEB", reset=b"\x74"),
+    stop_spawning=BytePatch(addr=0x004265DC, hack=b"\xEB", reset=b"\x74"),
+    auto_collected=BytePatch(addr=0x0043158F, hack=b"\xEB", reset=b"\x75"),
+    reload_instantly=BytePatch(addr=0x0046103B, hack=b"\x80", reset=b"\x85"),
+    no_cooldown_1=BytePatch(addr=0x00461565, hack=b"\x70", reset=b"\x75"),
+    no_cooldown_2=BytePatch(addr=0x00461E37, hack=b"\x80", reset=b"\x85"),
 )
 
 OFFSETS_1065_EN = VersionOffsets(
@@ -65,7 +81,15 @@ OFFSETS_1065_EN = VersionOffsets(
     sun=0x5560,
     user_data=0x82C,
     money=0x28,
-    unlock_sun_limit=SunPatch(addr=0x00430A83, hack=b"\xEB", reset=b"\x7E"),
+    unlock_sun_limit=BytePatch(addr=0x00430A83, hack=b"\xEB", reset=b"\x7E"),
+    placed_anywhere=BytePatch(addr=0x0040FE20, hack=b"\x81", reset=b"\x84"),
+    placed_anywhere_preview=BytePatch(addr=0x00438EB0, hack=b"\xEB", reset=b"\x74"),
+    mushrooms_awake=BytePatch(addr=0x0045DF8E, hack=b"\xEB", reset=b"\x74"),
+    stop_spawning=BytePatch(addr=0x0042663C, hack=b"\xEB", reset=b"\x74"),
+    auto_collected=BytePatch(addr=0x004315EF, hack=b"\xEB", reset=b"\x75"),
+    reload_instantly=BytePatch(addr=0x004611BB, hack=b"\x80", reset=b"\x85"),
+    no_cooldown_1=BytePatch(addr=0x004616E5, hack=b"\x70", reset=b"\x75"),
+    no_cooldown_2=BytePatch(addr=0x00461FB7, hack=b"\x80", reset=b"\x85"),
 )
 
 OFFSETS_1073_EN = VersionOffsets(
@@ -84,7 +108,15 @@ OFFSETS_1073_EN = VersionOffsets(
     sun=0x5578,
     user_data=0x94C,
     money=0x50,
-    unlock_sun_limit=SunPatch(addr=0x0041E6F5, hack=b"\xEB", reset=b"\x7E"),
+    unlock_sun_limit=BytePatch(addr=0x0041E6F5, hack=b"\xEB", reset=b"\x7E"),
+    placed_anywhere=BytePatch(addr=0x004127F0, hack=b"\x81", reset=b"\x84"),
+    placed_anywhere_preview=BytePatch(addr=0x0043C030, hack=b"\xEB", reset=b"\x74"),
+    mushrooms_awake=BytePatch(addr=0x004617C2, hack=b"\xEB", reset=b"\x74"),
+    stop_spawning=BytePatch(addr=0x004290DC, hack=b"\xEB", reset=b"\x74"),
+    auto_collected=BytePatch(addr=0x004342F2, hack=b"\xEB", reset=b"\x75"),
+    reload_instantly=BytePatch(addr=0x00464A0B, hack=b"\x80", reset=b"\x85"),
+    no_cooldown_1=BytePatch(addr=0x00464F25, hack=b"\x70", reset=b"\x75"),
+    no_cooldown_2=BytePatch(addr=0x00465817, hack=b"\x80", reset=b"\x85"),
 )
 
 OFFSETS_1096_EN = VersionOffsets(
@@ -103,7 +135,15 @@ OFFSETS_1096_EN = VersionOffsets(
     sun=0x5578,
     user_data=0x94C,
     money=0x54,
-    unlock_sun_limit=SunPatch(addr=0x0041F4E5, hack=b"\xEB", reset=b"\x7E"),
+    unlock_sun_limit=BytePatch(addr=0x0041F4E5, hack=b"\xEB", reset=b"\x7E"),
+    placed_anywhere=BytePatch(addr=0x00413350, hack=b"\x81", reset=b"\x84"),
+    placed_anywhere_preview=BytePatch(addr=0x0043D100, hack=b"\xEB", reset=b"\x74"),
+    mushrooms_awake=BytePatch(addr=0x004641A2, hack=b"\xEB", reset=b"\x74"),
+    stop_spawning=BytePatch(addr=0x0042A12C, hack=b"\xEB", reset=b"\x74"),
+    auto_collected=BytePatch(addr=0x004352F2, hack=b"\xEB", reset=b"\x75"),
+    reload_instantly=BytePatch(addr=0x004673EB, hack=b"\x80", reset=b"\x85"),
+    no_cooldown_1=BytePatch(addr=0x00467905, hack=b"\x70", reset=b"\x75"),
+    no_cooldown_2=BytePatch(addr=0x004681F7, hack=b"\x80", reset=b"\x85"),
 )
 
 VERSIONS_BY_TIMESTAMP = {

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ctypes
 import json
 from pathlib import Path
 
@@ -41,6 +42,7 @@ ZH = [
 
 
 class MainWindow(QMainWindow):
+
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("PvZ Toolkit Python")
@@ -69,7 +71,10 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self.resource_tab, "资源"); self.tabs.addTab(self.combat_tab, "战场"); self.tabs.addTab(self.plant_tab, "植物")
         self._build_resource_tab(); self._build_combat_tab(); self._build_plant_tab()
 
+        self._z_prev_down = False
+
         self.timer = QTimer(self); self.timer.setInterval(700); self.timer.timeout.connect(self.on_timer); self.timer.start()
+        self.hotkey_timer = QTimer(self); self.hotkey_timer.setInterval(30); self.hotkey_timer.timeout.connect(self.on_hotkey_poll); self.hotkey_timer.start()
 
     def _is_zh(self) -> bool:
         return (not self.force_english_check.isChecked()) and QLocale.system().language() == QLocale.Language.Chinese
@@ -83,6 +88,12 @@ class MainWindow(QMainWindow):
 
     def _warn(self, title: str, text: str) -> None:
         self._status(text); QMessageBox.warning(self, title, text)
+
+    def on_hotkey_poll(self) -> None:
+        z_now = bool(ctypes.windll.user32.GetAsyncKeyState(ord("Z")) & 0x8000)
+        if z_now and not self._z_prev_down:
+            self.on_apply_loaded_slot_preset()
+        self._z_prev_down = z_now
 
     def _rebuild_plant_combo(self) -> None:
         cur = self.slot_type_combo.currentData() if hasattr(self, "slot_type_combo") else 0
@@ -103,9 +114,11 @@ class MainWindow(QMainWindow):
         self.sun_input = QLineEdit(); self.money_input = QLineEdit()
         b_rs = QPushButton("读取阳光"); b_ws = QPushButton("写入阳光"); b_rm = QPushButton("读取金币"); b_wm = QPushButton("写入金币")
         self.sun_limit = QCheckBox("阳光无上限")
+        self.auto_collected = QCheckBox("自动收集")
         b_rs.clicked.connect(self.on_refresh_sun); b_ws.clicked.connect(self.on_set_sun); b_rm.clicked.connect(self.on_refresh_money); b_wm.clicked.connect(self.on_set_money)
         self.sun_limit.stateChanged.connect(self.on_toggle_sun_limit)
-        for w in [self.sun_label, self.sun_input, b_rs, b_ws, self.money_label, self.money_input, b_rm, b_wm, self.sun_limit]: lay.addWidget(w)
+        self.auto_collected.stateChanged.connect(self.on_toggle_auto_collected)
+        for w in [self.sun_label, self.sun_input, b_rs, b_ws, self.money_label, self.money_input, b_rm, b_wm, self.sun_limit, self.auto_collected]: lay.addWidget(w)
 
     def _build_combat_tab(self) -> None:
         lay = QVBoxLayout(self.combat_tab)
@@ -118,6 +131,21 @@ class MainWindow(QMainWindow):
     def _build_plant_tab(self) -> None:
         lay = QVBoxLayout(self.plant_tab)
         self.free_planting = QCheckBox("免费种植"); self.free_planting.stateChanged.connect(self.on_toggle_free); lay.addWidget(self.free_planting)
+        self.placed_anywhere = QCheckBox("任意种植（含预览）")
+        self.placed_anywhere.stateChanged.connect(self.on_toggle_placed_anywhere)
+        self.mushrooms_awake = QCheckBox("蘑菇唤醒")
+        self.mushrooms_awake.stateChanged.connect(self.on_toggle_mushrooms_awake)
+        self.stop_spawning = QCheckBox("停止出怪")
+        self.stop_spawning.stateChanged.connect(self.on_toggle_stop_spawning)
+        self.reload_instantly = QCheckBox("立即装填")
+        self.reload_instantly.stateChanged.connect(self.on_toggle_reload_instantly)
+        self.no_cooldown = QCheckBox("无冷却")
+        self.no_cooldown.stateChanged.connect(self.on_toggle_no_cooldown)
+        lay.addWidget(self.placed_anywhere)
+        lay.addWidget(self.mushrooms_awake)
+        lay.addWidget(self.stop_spawning)
+        lay.addWidget(self.reload_instantly)
+        lay.addWidget(self.no_cooldown)
 
         g1 = QGroupBox("卡槽编辑"); gl1 = QVBoxLayout(g1)
         self.slot_count_label = QLabel("卡槽数量: --")
@@ -133,9 +161,10 @@ class MainWindow(QMainWindow):
         self.preset_info = QLabel("未加载预设")
         self.preset_summary = QLabel("十格摘要：\n(暂无)"); self.preset_summary.setWordWrap(True)
         b_refresh = QPushButton("当前十卡一键刷新到界面")
-        b_save = QPushButton("保存当前十卡"); b_load = QPushButton("读取预设文件"); b_apply = QPushButton("应用已读取预设")
+        b_save = QPushButton("保存当前十卡"); b_load = QPushButton("读取预设文件"); b_apply = QPushButton("应用已读取预设 (Z)")
         b_refresh.clicked.connect(self.on_refresh_current_ten_to_ui)
         b_save.clicked.connect(self.on_save_slot_preset); b_load.clicked.connect(self.on_load_slot_preset); b_apply.clicked.connect(self.on_apply_loaded_slot_preset)
+        b_apply.setShortcut("Z")
         for w in [self.preset_info, self.preset_summary, b_refresh, b_save, b_load, b_apply]: gl2.addWidget(w)
         lay.addWidget(g2)
 
@@ -196,6 +225,10 @@ class MainWindow(QMainWindow):
         try: self.adapter.set_unlock_sun_limit(self.sun_limit.isChecked())
         except Exception as ex: self._warn("修改失败", str(ex))
 
+    def on_toggle_auto_collected(self) -> None:
+        try: self.adapter.set_auto_collected(self.auto_collected.isChecked())
+        except Exception as ex: self._warn("修改失败", str(ex))
+
     def on_refresh_combat(self) -> None:
         try:
             self.ui_label.setText(f"GameUI: {self.adapter.get_game_ui()}")
@@ -209,6 +242,26 @@ class MainWindow(QMainWindow):
 
     def on_toggle_free(self) -> None:
         try: self.adapter.set_free_planting(self.free_planting.isChecked())
+        except Exception as ex: self._warn("修改失败", str(ex))
+
+    def on_toggle_placed_anywhere(self) -> None:
+        try: self.adapter.set_placed_anywhere(self.placed_anywhere.isChecked())
+        except Exception as ex: self._warn("修改失败", str(ex))
+
+    def on_toggle_mushrooms_awake(self) -> None:
+        try: self.adapter.set_mushrooms_awake(self.mushrooms_awake.isChecked())
+        except Exception as ex: self._warn("修改失败", str(ex))
+
+    def on_toggle_stop_spawning(self) -> None:
+        try: self.adapter.set_stop_spawning(self.stop_spawning.isChecked())
+        except Exception as ex: self._warn("修改失败", str(ex))
+
+    def on_toggle_reload_instantly(self) -> None:
+        try: self.adapter.set_reload_instantly(self.reload_instantly.isChecked())
+        except Exception as ex: self._warn("修改失败", str(ex))
+
+    def on_toggle_no_cooldown(self) -> None:
+        try: self.adapter.set_no_cooldown(self.no_cooldown.isChecked())
         except Exception as ex: self._warn("修改失败", str(ex))
 
     def on_read_slot_one(self) -> None:

@@ -36,6 +36,21 @@ class VersionOffsets:
     reload_instantly: BytePatch
     no_cooldown_1: BytePatch
     no_cooldown_2: BytePatch
+    not_drop_loot: BytePatch
+    lock_butter: BytePatch
+    no_crater: BytePatch
+    no_ice_trail_1: BytePatch
+    no_ice_trail_2: BytePatch
+    stop_zombies_1: BytePatch
+    stop_zombies_2: BytePatch
+    zombie_not_explode_1: BytePatch
+    zombie_not_explode_2: BytePatch
+    no_fog: BytePatch
+    challenge: int
+    call_put_plant: int
+    call_put_zombie: int
+    call_put_grave: int
+    call_put_ladder: int
 
 
 OFFSETS_1051_EN = VersionOffsets(
@@ -63,6 +78,21 @@ OFFSETS_1051_EN = VersionOffsets(
     reload_instantly=BytePatch(addr=0x0046103B, hack=b"\x80", reset=b"\x85"),
     no_cooldown_1=BytePatch(addr=0x00461565, hack=b"\x70", reset=b"\x75"),
     no_cooldown_2=BytePatch(addr=0x00461E37, hack=b"\x80", reset=b"\x85"),
+    not_drop_loot=BytePatch(addr=0x00530276, hack=b"\x66", reset=b"\x5B"),
+    lock_butter=BytePatch(addr=0x0045F1EC, hack=b"\x70", reset=b"\x75"),
+    no_crater=BytePatch(addr=0x0041D79E, hack=b"\x70", reset=b"\x75"),
+    no_ice_trail_1=BytePatch(addr=0x0052A7B0, hack=b"\xC3", reset=b"\x51"),
+    no_ice_trail_2=BytePatch(addr=0x0041F79A, hack=b"\xEB", reset=b"\x75"),
+    stop_zombies_1=BytePatch(addr=0x0052AB2B, hack=b"\x54", reset=b"\x64"),
+    stop_zombies_2=BytePatch(addr=0x0052AB34, hack=b"\x54", reset=b"\x44"),
+    zombie_not_explode_1=BytePatch(addr=0x00526AFC, hack=b"\x81", reset=b"\x8F"),
+    zombie_not_explode_2=BytePatch(addr=0x005275DD, hack=b"\x81", reset=b"\x85"),
+    no_fog=BytePatch(addr=0x0041A68D, hack=b"\x31\xD2", reset=b"\x3B\xF2"),
+    challenge=0x160,
+    call_put_plant=0x0040D120,
+    call_put_zombie=0x0042A0F0,
+    call_put_grave=0x00426620,
+    call_put_ladder=0x00408F40,
 )
 
 OFFSETS_1065_EN = VersionOffsets(
@@ -90,6 +120,21 @@ OFFSETS_1065_EN = VersionOffsets(
     reload_instantly=BytePatch(addr=0x004611BB, hack=b"\x80", reset=b"\x85"),
     no_cooldown_1=BytePatch(addr=0x004616E5, hack=b"\x70", reset=b"\x75"),
     no_cooldown_2=BytePatch(addr=0x00461FB7, hack=b"\x80", reset=b"\x85"),
+    not_drop_loot=BytePatch(addr=0x005305C6, hack=b"\x66", reset=b"\x5B"),
+    lock_butter=BytePatch(addr=0x0045F2EC, hack=b"\x70", reset=b"\x75"),
+    no_crater=BytePatch(addr=0x0041D7CE, hack=b"\x70", reset=b"\x75"),
+    no_ice_trail_1=BytePatch(addr=0x0052AB00, hack=b"\xC3", reset=b"\x51"),
+    no_ice_trail_2=BytePatch(addr=0x0041F7FA, hack=b"\xEB", reset=b"\x75"),
+    stop_zombies_1=BytePatch(addr=0x0052AE7B, hack=b"\x54", reset=b"\x64"),
+    stop_zombies_2=BytePatch(addr=0x0052AE84, hack=b"\x54", reset=b"\x44"),
+    zombie_not_explode_1=BytePatch(addr=0x00526E4C, hack=b"\x81", reset=b"\x8F"),
+    zombie_not_explode_2=BytePatch(addr=0x0052792D, hack=b"\x81", reset=b"\x85"),
+    no_fog=BytePatch(addr=0x0041A6AD, hack=b"\x31\xD2", reset=b"\x3B\xF2"),
+    challenge=0x160,
+    call_put_plant=0x0040D130,
+    call_put_zombie=0x0042A150,
+    call_put_grave=0x00426680,
+    call_put_ladder=0x00408F50,
 )
 
 OFFSETS_1073_EN = VersionOffsets(
@@ -117,6 +162,21 @@ OFFSETS_1073_EN = VersionOffsets(
     reload_instantly=BytePatch(addr=0x00464A0B, hack=b"\x80", reset=b"\x85"),
     no_cooldown_1=BytePatch(addr=0x00464F25, hack=b"\x70", reset=b"\x75"),
     no_cooldown_2=BytePatch(addr=0x00465817, hack=b"\x80", reset=b"\x85"),
+    not_drop_loot=BytePatch(addr=0x00540C06, hack=b"\x66", reset=b"\x5B"),
+    lock_butter=BytePatch(addr=0x00462B42, hack=b"\x70", reset=b"\x75"),
+    no_crater=BytePatch(addr=0x0042057D, hack=b"\x70", reset=b"\x75"),
+    no_ice_trail_1=BytePatch(addr=0x0053B0B0, hack=b"\xC3", reset=b"\x51"),
+    no_ice_trail_2=BytePatch(addr=0x004222EA, hack=b"\xEB", reset=b"\x75"),
+    stop_zombies_1=BytePatch(addr=0x0053B433, hack=b"\x54", reset=b"\x64"),
+    stop_zombies_2=BytePatch(addr=0x0053B43C, hack=b"\x54", reset=b"\x44"),
+    zombie_not_explode_1=BytePatch(addr=0x0053718C, hack=b"\x81", reset=b"\x8F"),
+    zombie_not_explode_2=BytePatch(addr=0x00537C6D, hack=b"\x81", reset=b"\x85"),
+    no_fog=BytePatch(addr=0x0041D17D, hack=b"\x31\xD2", reset=b"\x3B\xF2"),
+    challenge=0x160 + 0x18,
+    call_put_plant=0x0040FA10,
+    call_put_zombie=0x0042CC90,
+    call_put_grave=0x00429120,
+    call_put_ladder=0x0040B870,
 )
 
 OFFSETS_1096_EN = VersionOffsets(
@@ -144,6 +204,21 @@ OFFSETS_1096_EN = VersionOffsets(
     reload_instantly=BytePatch(addr=0x004673EB, hack=b"\x80", reset=b"\x85"),
     no_cooldown_1=BytePatch(addr=0x00467905, hack=b"\x70", reset=b"\x75"),
     no_cooldown_2=BytePatch(addr=0x004681F7, hack=b"\x80", reset=b"\x85"),
+    not_drop_loot=BytePatch(addr=0x00544D26, hack=b"\x66", reset=b"\x5B"),
+    lock_butter=BytePatch(addr=0x00465522, hack=b"\x70", reset=b"\x75"),
+    no_crater=BytePatch(addr=0x0042136D, hack=b"\x70", reset=b"\x75"),
+    no_ice_trail_1=BytePatch(addr=0x0053F1B0, hack=b"\xC3", reset=b"\x51"),
+    no_ice_trail_2=BytePatch(addr=0x0042333A, hack=b"\xEB", reset=b"\x75"),
+    stop_zombies_1=BytePatch(addr=0x0053F533, hack=b"\x54", reset=b"\x64"),
+    stop_zombies_2=BytePatch(addr=0x0053F53C, hack=b"\x54", reset=b"\x44"),
+    zombie_not_explode_1=BytePatch(addr=0x0053B2EC, hack=b"\x81", reset=b"\x8F"),
+    zombie_not_explode_2=BytePatch(addr=0x0053BDCD, hack=b"\x81", reset=b"\x85"),
+    no_fog=BytePatch(addr=0x0041DF4D, hack=b"\x31\xD2", reset=b"\x3B\xF2"),
+    challenge=0x160 + 0x18,
+    call_put_plant=0x004105A0,
+    call_put_zombie=0x0042DCE0,
+    call_put_grave=0x0042A170,
+    call_put_ladder=0x0040C420,
 )
 
 VERSIONS_BY_TIMESTAMP = {

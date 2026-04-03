@@ -83,6 +83,28 @@ CloseHandle = kernel32.CloseHandle
 CloseHandle.argtypes = [wintypes.HANDLE]
 CloseHandle.restype = wintypes.BOOL
 
+VirtualAllocEx = kernel32.VirtualAllocEx
+VirtualAllocEx.argtypes = [wintypes.HANDLE, wintypes.LPVOID, ctypes.c_size_t, wintypes.DWORD, wintypes.DWORD]
+VirtualAllocEx.restype = wintypes.LPVOID
+
+VirtualFreeEx = kernel32.VirtualFreeEx
+VirtualFreeEx.argtypes = [wintypes.HANDLE, wintypes.LPVOID, ctypes.c_size_t, wintypes.DWORD]
+VirtualFreeEx.restype = wintypes.BOOL
+
+CreateRemoteThread = kernel32.CreateRemoteThread
+CreateRemoteThread.argtypes = [wintypes.HANDLE, wintypes.LPVOID, ctypes.c_size_t, wintypes.LPVOID, wintypes.LPVOID, wintypes.DWORD, ctypes.POINTER(wintypes.DWORD)]
+CreateRemoteThread.restype = wintypes.HANDLE
+
+WaitForSingleObject = kernel32.WaitForSingleObject
+WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+WaitForSingleObject.restype = wintypes.DWORD
+
+MEM_COMMIT = 0x1000
+MEM_RESERVE = 0x2000
+MEM_RELEASE = 0x8000
+PAGE_EXECUTE_READWRITE = 0x40
+INFINITE = 0xFFFFFFFF
+
 
 @dataclass
 class AttachResult:
@@ -230,6 +252,119 @@ class PvZAdapter:
         if not self.process or not self.process.is_alive() or not self.offsets:
             raise RuntimeError("进程未连接或已退出")
         return self.process, self.offsets
+
+    def _assemble_put_plant(self, row: int, col: int, plant_type: int, imitater: bool) -> bytes:
+        _, off = self._ensure()
+        code = bytearray()
+        if imitater:
+            code += b"\x68" + int(plant_type).to_bytes(4, "little", signed=True)
+            code += b"\x6A\x30"
+        else:
+            code += b"\x6A\xFF"
+            code += b"\x68" + int(plant_type).to_bytes(4, "little", signed=True)
+        code += b"\xB8" + int(row).to_bytes(4, "little", signed=True)
+        code += b"\x68" + int(col).to_bytes(4, "little", signed=True)
+        code += b"\x8B\x2D" + int(off.lawn).to_bytes(4, "little")
+        code += b"\x8B\xAD" + int(off.board).to_bytes(4, "little")
+        code += b"\x55"
+        code += b"\xBE" + int(off.call_put_plant).to_bytes(4, "little")
+        code += b"\xFF\xD6"
+        code += b"\xC3"
+        return bytes(code)
+
+    def _assemble_put_zombie(self, row: int, col: int, zombie_type: int) -> bytes:
+        _, off = self._ensure()
+        code = bytearray()
+        code += b"\x68" + int(col).to_bytes(4, "little", signed=True)
+        code += b"\x68" + int(zombie_type).to_bytes(4, "little", signed=True)
+        code += b"\xB8" + int(row).to_bytes(4, "little", signed=True)
+        code += b"\x8B\x0D" + int(off.lawn).to_bytes(4, "little")
+        code += b"\x8B\x89" + int(off.board).to_bytes(4, "little")
+        code += b"\x8B\x89" + int(off.challenge).to_bytes(4, "little")
+        code += b"\xBE" + int(off.call_put_zombie).to_bytes(4, "little")
+        code += b"\xFF\xD6"
+        code += b"\xC3"
+        return bytes(code)
+
+    def _assemble_put_grave(self, row: int, col: int) -> bytes:
+        _, off = self._ensure()
+        code = bytearray()
+        code += b"\x8B\x15" + int(off.lawn).to_bytes(4, "little")
+        code += b"\x8B\x92" + int(off.board).to_bytes(4, "little")
+        code += b"\x8B\x92" + int(off.challenge).to_bytes(4, "little")
+        code += b"\x52"
+        code += b"\xBF" + int(row).to_bytes(4, "little", signed=True)
+        code += b"\xBB" + int(col).to_bytes(4, "little", signed=True)
+        code += b"\xBE" + int(off.call_put_grave).to_bytes(4, "little")
+        code += b"\xFF\xD6"
+        code += b"\xC3"
+        return bytes(code)
+
+    def _assemble_put_ladder(self, row: int, col: int) -> bytes:
+        _, off = self._ensure()
+        code = bytearray()
+        code += b"\xBF" + int(row).to_bytes(4, "little", signed=True)
+        code += b"\x68" + int(col).to_bytes(4, "little", signed=True)
+        code += b"\xA1" + int(off.lawn).to_bytes(4, "little")
+        code += b"\x8B\x80" + int(off.board).to_bytes(4, "little")
+        code += b"\xBE" + int(off.call_put_ladder).to_bytes(4, "little")
+        code += b"\xFF\xD6"
+        code += b"\xC3"
+        return bytes(code)
+
+    def _run_remote_code(self, code: bytes) -> None:
+        proc, _ = self._ensure()
+        remote = VirtualAllocEx(proc.handle, None, len(code), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE)
+        if not remote:
+            raise RuntimeError("VirtualAllocEx 失败")
+        try:
+            proc.write_bytes(code, [int(ctypes.cast(remote, ctypes.c_void_p).value)])
+            thread = CreateRemoteThread(proc.handle, None, 0, remote, None, 0, None)
+            if not thread:
+                raise RuntimeError("CreateRemoteThread 失败")
+            try:
+                WaitForSingleObject(thread, INFINITE)
+            finally:
+                CloseHandle(thread)
+        finally:
+            VirtualFreeEx(proc.handle, remote, 0, MEM_RELEASE)
+
+    def _check_combat_ui(self) -> None:
+        ui = self.get_game_ui()
+        if ui not in (2, 3):
+            raise RuntimeError(f"当前 GameUI={ui}，不在战斗界面")
+
+    def _row_count(self) -> int:
+        scene = self.get_scene()
+        return 6 if scene in (2, 3) else 5
+
+    def _iter_targets(self, row: int, col: int, col_max: int = 9):
+        rows = range(self._row_count()) if row == -1 else [row]
+        cols = range(col_max) if col == -1 else [col]
+        for r in rows:
+            for c in cols:
+                yield r, c
+
+    def put_plant(self, row: int, col: int, plant_type: int, imitater: bool) -> None:
+        self._check_combat_ui()
+        col_max = 8 if plant_type == 47 else 9
+        for r, c in self._iter_targets(row, col, col_max):
+            self._run_remote_code(self._assemble_put_plant(r, c, plant_type, imitater))
+
+    def put_zombie(self, row: int, col: int, zombie_type: int) -> None:
+        self._check_combat_ui()
+        for r, c in self._iter_targets(row, col, 9):
+            self._run_remote_code(self._assemble_put_zombie(r, c, zombie_type))
+
+    def put_grave(self, row: int, col: int) -> None:
+        self._check_combat_ui()
+        for r, c in self._iter_targets(row, col, 9):
+            self._run_remote_code(self._assemble_put_grave(r, c))
+
+    def put_ladder(self, row: int, col: int) -> None:
+        self._check_combat_ui()
+        for r, c in self._iter_targets(row, col, 9):
+            self._run_remote_code(self._assemble_put_ladder(r, c))
 
     def get_game_ui(self) -> int:
         proc, off = self._ensure()
@@ -392,3 +527,44 @@ class PvZAdapter:
         p2 = off.no_cooldown_2
         proc.write_bytes(p1.hack if enabled else p1.reset, [p1.addr])
         proc.write_bytes(p2.hack if enabled else p2.reset, [p2.addr])
+
+    def set_not_drop_loot(self, enabled: bool) -> None:
+        proc, off = self._ensure()
+        p = off.not_drop_loot
+        proc.write_bytes(p.hack if enabled else p.reset, [p.addr])
+
+    def set_lock_butter(self, enabled: bool) -> None:
+        proc, off = self._ensure()
+        p = off.lock_butter
+        proc.write_bytes(p.hack if enabled else p.reset, [p.addr])
+
+    def set_no_crater(self, enabled: bool) -> None:
+        proc, off = self._ensure()
+        p = off.no_crater
+        proc.write_bytes(p.hack if enabled else p.reset, [p.addr])
+
+    def set_no_ice_trail(self, enabled: bool) -> None:
+        proc, off = self._ensure()
+        p1 = off.no_ice_trail_1
+        p2 = off.no_ice_trail_2
+        proc.write_bytes(p1.hack if enabled else p1.reset, [p1.addr])
+        proc.write_bytes(p2.hack if enabled else p2.reset, [p2.addr])
+
+    def set_stop_zombies(self, enabled: bool) -> None:
+        proc, off = self._ensure()
+        p1 = off.stop_zombies_1
+        p2 = off.stop_zombies_2
+        proc.write_bytes(p1.hack if enabled else p1.reset, [p1.addr])
+        proc.write_bytes(p2.hack if enabled else p2.reset, [p2.addr])
+
+    def set_zombie_not_explode(self, enabled: bool) -> None:
+        proc, off = self._ensure()
+        p1 = off.zombie_not_explode_1
+        p2 = off.zombie_not_explode_2
+        proc.write_bytes(p1.hack if enabled else p1.reset, [p1.addr])
+        proc.write_bytes(p2.hack if enabled else p2.reset, [p2.addr])
+
+    def set_no_fog(self, enabled: bool) -> None:
+        proc, off = self._ensure()
+        p = off.no_fog
+        proc.write_bytes(p.hack if enabled else p.reset, [p.addr])

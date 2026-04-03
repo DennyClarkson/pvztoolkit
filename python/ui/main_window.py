@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QFileDialog,
     QFormLayout,
+    QGridLayout,
     QGroupBox,
     QLabel,
     QLineEdit,
@@ -38,6 +39,13 @@ ZH = [
     "海蘑菇","路灯花","仙人掌","三叶草","分裂豆","杨桃","南瓜头","磁力菇",
     "卷心菜投手","花盆","玉米投手","咖啡豆","大蒜","叶子保护伞","金盏花","西瓜投手",
     "机枪射手","双子向日葵","忧郁菇","香蒲","冰西瓜","吸金磁","地刺王","玉米加农炮",
+]
+
+ZH_ZOMBIES = [
+    "普通僵尸", "旗帜僵尸", "路障僵尸", "撑杆僵尸", "铁桶僵尸", "读报僵尸", "铁门僵尸", "橄榄球僵尸",
+    "舞王僵尸", "伴舞僵尸", "鸭子救生圈僵尸", "潜水僵尸", "冰车僵尸", "雪橇车小队", "海豚骑士僵尸", "小丑僵尸",
+    "气球僵尸", "矿工僵尸", "跳跳僵尸", "雪人僵尸", "蹦极僵尸", "扶梯僵尸", "投石车僵尸", "白眼巨人",
+    "小鬼僵尸", "僵王博士", "豌豆僵尸", "坚果僵尸", "辣椒僵尸", "机枪豌豆僵尸", "倭瓜僵尸", "高坚果僵尸", "红眼巨人",
 ]
 
 
@@ -115,18 +123,50 @@ class MainWindow(QMainWindow):
         b_rs = QPushButton("读取阳光"); b_ws = QPushButton("写入阳光"); b_rm = QPushButton("读取金币"); b_wm = QPushButton("写入金币")
         self.sun_limit = QCheckBox("阳光无上限")
         self.auto_collected = QCheckBox("自动收集")
+        self.not_drop_loot = QCheckBox("不掉落物品")
         b_rs.clicked.connect(self.on_refresh_sun); b_ws.clicked.connect(self.on_set_sun); b_rm.clicked.connect(self.on_refresh_money); b_wm.clicked.connect(self.on_set_money)
         self.sun_limit.stateChanged.connect(self.on_toggle_sun_limit)
         self.auto_collected.stateChanged.connect(self.on_toggle_auto_collected)
-        for w in [self.sun_label, self.sun_input, b_rs, b_ws, self.money_label, self.money_input, b_rm, b_wm, self.sun_limit, self.auto_collected]: lay.addWidget(w)
+        self.not_drop_loot.stateChanged.connect(self.on_toggle_not_drop_loot)
+        for w in [self.sun_label, self.sun_input, b_rs, b_ws, self.money_label, self.money_input, b_rm, b_wm, self.sun_limit, self.auto_collected, self.not_drop_loot]: lay.addWidget(w)
 
     def _build_combat_tab(self) -> None:
         lay = QVBoxLayout(self.combat_tab)
         self.ui_label = QLabel("GameUI: --"); self.mode_label = QLabel("Mode: --"); self.scene_label = QLabel("Scene: --")
         self.scene_combo = QComboBox(); self.scene_combo.addItems(["0", "1", "2", "3", "4", "5"])
         b_ref = QPushButton("刷新"); b_set = QPushButton("写入场景")
+        self.no_fog = QCheckBox("无雾")
+        self.no_fog.stateChanged.connect(self.on_toggle_no_fog)
         b_ref.clicked.connect(self.on_refresh_combat); b_set.clicked.connect(self.on_set_scene)
-        for w in [self.ui_label, self.mode_label, self.scene_label, b_ref, self.scene_combo, b_set]: lay.addWidget(w)
+        for w in [self.ui_label, self.mode_label, self.scene_label, b_ref, self.scene_combo, b_set, self.no_fog]: lay.addWidget(w)
+
+        g_put = QGroupBox("投放（测试）")
+        gp = QFormLayout(g_put)
+        self.put_row_combo = QComboBox(); self.put_row_combo.addItems(["全部", "1", "2", "3", "4", "5", "6"])
+        self.put_col_combo = QComboBox(); self.put_col_combo.addItems(["全部", "1", "2", "3", "4", "5", "6", "7", "8", "9"])
+        self.put_plant_combo = QComboBox()
+        for i in range(48): self.put_plant_combo.addItem(f"[{i}] {self._name(i)}", i)
+        self.put_plant_im = QCheckBox("模仿者")
+        self.put_zombie_combo = QComboBox()
+        for i, name in enumerate(ZH_ZOMBIES): self.put_zombie_combo.addItem(f"{name} [ID:{i}]", i)
+        b_put_plant = QPushButton("放植物")
+        b_put_zombie = QPushButton("放僵尸")
+        b_put_ladder = QPushButton("放梯子")
+        b_put_grave = QPushButton("放墓碑")
+        b_put_plant.clicked.connect(self.on_put_plant)
+        b_put_zombie.clicked.connect(self.on_put_zombie)
+        b_put_ladder.clicked.connect(self.on_put_ladder)
+        b_put_grave.clicked.connect(self.on_put_grave)
+        gp.addRow("行", self.put_row_combo)
+        gp.addRow("列", self.put_col_combo)
+        gp.addRow("植物", self.put_plant_combo)
+        gp.addRow(self.put_plant_im)
+        gp.addRow("僵尸", self.put_zombie_combo)
+        gp.addRow(b_put_plant)
+        gp.addRow(b_put_zombie)
+        gp.addRow(b_put_ladder)
+        gp.addRow(b_put_grave)
+        lay.addWidget(g_put)
 
     def _build_plant_tab(self) -> None:
         lay = QVBoxLayout(self.plant_tab)
@@ -141,11 +181,34 @@ class MainWindow(QMainWindow):
         self.reload_instantly.stateChanged.connect(self.on_toggle_reload_instantly)
         self.no_cooldown = QCheckBox("无冷却")
         self.no_cooldown.stateChanged.connect(self.on_toggle_no_cooldown)
-        lay.addWidget(self.placed_anywhere)
-        lay.addWidget(self.mushrooms_awake)
-        lay.addWidget(self.stop_spawning)
-        lay.addWidget(self.reload_instantly)
-        lay.addWidget(self.no_cooldown)
+        self.lock_butter = QCheckBox("锁定黄油")
+        self.lock_butter.stateChanged.connect(self.on_toggle_lock_butter)
+        self.no_crater = QCheckBox("无坑洞")
+        self.no_crater.stateChanged.connect(self.on_toggle_no_crater)
+        self.no_ice_trail = QCheckBox("无冰道")
+        self.no_ice_trail.stateChanged.connect(self.on_toggle_no_ice_trail)
+        self.stop_zombies = QCheckBox("停止僵尸")
+        self.stop_zombies.stateChanged.connect(self.on_toggle_stop_zombies)
+        self.zombie_not_explode = QCheckBox("僵尸不爆炸")
+        self.zombie_not_explode.stateChanged.connect(self.on_toggle_zombie_not_explode)
+
+        g_switches = QGroupBox("战场开关")
+        gls = QGridLayout(g_switches)
+        switches = [
+            self.placed_anywhere,
+            self.mushrooms_awake,
+            self.stop_spawning,
+            self.reload_instantly,
+            self.no_cooldown,
+            self.lock_butter,
+            self.no_crater,
+            self.no_ice_trail,
+            self.stop_zombies,
+            self.zombie_not_explode,
+        ]
+        for i, w in enumerate(switches):
+            gls.addWidget(w, i // 2, i % 2)
+        lay.addWidget(g_switches)
 
         g1 = QGroupBox("卡槽编辑"); gl1 = QVBoxLayout(g1)
         self.slot_count_label = QLabel("卡槽数量: --")
@@ -229,6 +292,10 @@ class MainWindow(QMainWindow):
         try: self.adapter.set_auto_collected(self.auto_collected.isChecked())
         except Exception as ex: self._warn("修改失败", str(ex))
 
+    def on_toggle_not_drop_loot(self) -> None:
+        try: self.adapter.set_not_drop_loot(self.not_drop_loot.isChecked())
+        except Exception as ex: self._warn("修改失败", str(ex))
+
     def on_refresh_combat(self) -> None:
         try:
             self.ui_label.setText(f"GameUI: {self.adapter.get_game_ui()}")
@@ -239,6 +306,38 @@ class MainWindow(QMainWindow):
     def on_set_scene(self) -> None:
         try: self.adapter.set_scene(self.scene_combo.currentIndex())
         except Exception as ex: self._warn("写入失败", str(ex))
+
+    def _put_row_col(self) -> tuple[int, int]:
+        row_idx = self.put_row_combo.currentIndex()
+        col_idx = self.put_col_combo.currentIndex()
+        row = -1 if row_idx == 0 else row_idx - 1
+        col = -1 if col_idx == 0 else col_idx - 1
+        return row, col
+
+    def on_put_plant(self) -> None:
+        try:
+            row, col = self._put_row_col()
+            self.adapter.put_plant(row, col, int(self.put_plant_combo.currentData()), self.put_plant_im.isChecked())
+        except Exception as ex: self._warn("放置失败", str(ex))
+
+    def on_put_zombie(self) -> None:
+        try:
+            row, col = self._put_row_col()
+            zombie_type = int(self.put_zombie_combo.currentData())
+            self.adapter.put_zombie(row, col, zombie_type)
+        except Exception as ex: self._warn("放置失败", str(ex))
+
+    def on_put_ladder(self) -> None:
+        try:
+            row, col = self._put_row_col()
+            self.adapter.put_ladder(row, col)
+        except Exception as ex: self._warn("放置失败", str(ex))
+
+    def on_put_grave(self) -> None:
+        try:
+            row, col = self._put_row_col()
+            self.adapter.put_grave(row, col)
+        except Exception as ex: self._warn("放置失败", str(ex))
 
     def on_toggle_free(self) -> None:
         try: self.adapter.set_free_planting(self.free_planting.isChecked())
@@ -262,6 +361,30 @@ class MainWindow(QMainWindow):
 
     def on_toggle_no_cooldown(self) -> None:
         try: self.adapter.set_no_cooldown(self.no_cooldown.isChecked())
+        except Exception as ex: self._warn("修改失败", str(ex))
+
+    def on_toggle_lock_butter(self) -> None:
+        try: self.adapter.set_lock_butter(self.lock_butter.isChecked())
+        except Exception as ex: self._warn("修改失败", str(ex))
+
+    def on_toggle_no_crater(self) -> None:
+        try: self.adapter.set_no_crater(self.no_crater.isChecked())
+        except Exception as ex: self._warn("修改失败", str(ex))
+
+    def on_toggle_no_ice_trail(self) -> None:
+        try: self.adapter.set_no_ice_trail(self.no_ice_trail.isChecked())
+        except Exception as ex: self._warn("修改失败", str(ex))
+
+    def on_toggle_stop_zombies(self) -> None:
+        try: self.adapter.set_stop_zombies(self.stop_zombies.isChecked())
+        except Exception as ex: self._warn("修改失败", str(ex))
+
+    def on_toggle_zombie_not_explode(self) -> None:
+        try: self.adapter.set_zombie_not_explode(self.zombie_not_explode.isChecked())
+        except Exception as ex: self._warn("修改失败", str(ex))
+
+    def on_toggle_no_fog(self) -> None:
+        try: self.adapter.set_no_fog(self.no_fog.isChecked())
         except Exception as ex: self._warn("修改失败", str(ex))
 
     def on_read_slot_one(self) -> None:
